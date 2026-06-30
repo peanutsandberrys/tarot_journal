@@ -57,7 +57,6 @@ export default function App() {
         <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-center sm:text-left">
             <h1 className="text-lg font-bold tracking-tight text-zinc-900 uppercase">Tarot Journal</h1>
-            <p className="text-xs text-zinc-400 font-medium">Recorded offline and saved locally</p>
           </div>
 
           {/* Tab Selection Navigation */}
