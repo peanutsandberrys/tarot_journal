@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Compass, Calendar, BookOpen, AlertCircle, Eye } from 'lucide-react';
+import { Search, Compass, Calendar, BookOpen, AlertCircle, Eye, Database, Shield, Download, Upload } from 'lucide-react';
 import { TarotPull, CardPull, TarotCard } from '../types';
 import { tarotCards } from '../data/tarotCards';
 import SearchableCardSelect from './SearchableCardSelect';
 
 interface InsightsPageProps {
   pulls: TarotPull[];
+  onImportPulls?: (updatedPulls: TarotPull[]) => void;
+  isStoragePersisted?: boolean | null;
 }
 
-export default function InsightsPage({ pulls }: InsightsPageProps) {
+export default function InsightsPage({ pulls, onImportPulls, isStoragePersisted }: InsightsPageProps) {
   // Current selections
   const [selectedCardId, setSelectedCardId] = useState<string>('major-0'); // Default to The Fool
   const [isUpright, setIsUpright] = useState<boolean>(true);
@@ -208,6 +210,142 @@ export default function InsightsPage({ pulls }: InsightsPageProps) {
           </div>
         )}
       </div>
+
+      {/* Local Storage Backup & Security Tools */}
+      {onImportPulls && (
+        <div className="bg-white border border-zinc-100 rounded-xl p-5 shadow-2xs space-y-4 mt-8" id="data-management-card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5 text-zinc-500" />
+                Data Security & Local Backups
+              </h3>
+              <p className="text-[10px] text-zinc-400 font-medium mt-0.5">
+                Manage your local device database, export safe copies, or restore previous entries.
+              </p>
+            </div>
+            
+            {/* Persistence Status Badge */}
+            <div className="flex items-center">
+              {isStoragePersisted === true ? (
+                <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                  <Shield className="w-3 h-3 text-emerald-500" />
+                  <span>Device Storage Secured</span>
+                </div>
+              ) : isStoragePersisted === false ? (
+                <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">
+                  <AlertCircle className="w-3 h-3 text-amber-500" />
+                  <span>Standard Local Storage</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-400 bg-zinc-50 px-2.5 py-0.5 rounded-full">
+                  <span>Checking Storage Class...</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* Export block */}
+            <div className="space-y-2 bg-zinc-50/50 p-3 rounded-lg border border-zinc-100/60">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                Export Data
+              </span>
+              <p className="text-[11px] text-zinc-500 leading-normal">
+                Download a lightweight <code>.json</code> file of all your current journal logs. Save it anywhere as a local backup.
+              </p>
+              <button
+                onClick={() => {
+                  const dataStr = JSON.stringify(pulls, null, 2);
+                  const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                  const exportFileDefaultName = `tarot_journal_backup_${new Date().toISOString().split('T')[0]}.json`;
+                  
+                  const linkElement = document.createElement('a');
+                  linkElement.setAttribute('href', dataUri);
+                  linkElement.setAttribute('download', exportFileDefaultName);
+                  linkElement.click();
+                }}
+                disabled={pulls.length === 0}
+                className={`w-full py-2 px-3 text-xs font-semibold rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  pulls.length === 0
+                    ? "bg-zinc-100 text-zinc-300 border-zinc-200 cursor-not-allowed"
+                    : "bg-white text-zinc-800 border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 shadow-3xs"
+                }`}
+                id="btn-export-backup"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Backup ({pulls.length} entries)</span>
+              </button>
+            </div>
+
+            {/* Import block */}
+            <div className="space-y-2 bg-zinc-50/50 p-3 rounded-lg border border-zinc-100/60">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                Restore Backup
+              </span>
+              <p className="text-[11px] text-zinc-500 leading-normal">
+                Upload a previously saved backup file to restore or merge your journal. This will append missing entries safely.
+              </p>
+              
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => {
+                    const fileReader = new FileReader();
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    fileReader.onload = (event) => {
+                      try {
+                        const parsed = JSON.parse(event.target?.result as string);
+                        if (Array.isArray(parsed)) {
+                          // Validate each pull roughly
+                          const validPulls = parsed.filter(p => p && typeof p === 'object' && p.id && p.date && Array.isArray(p.cards));
+                          if (validPulls.length > 0) {
+                            // Merge strategy: keep existing, add new ones if not present by ID
+                            const existingIds = new Set(pulls.map(p => p.id));
+                            const uniqueNewPulls = validPulls.filter(p => !existingIds.has(p.id));
+                            
+                            if (uniqueNewPulls.length === 0 && validPulls.length > 0) {
+                              alert(`All ${validPulls.length} entries in backup are already present in your journal.`);
+                              return;
+                            }
+
+                            const merged = [...uniqueNewPulls, ...pulls].sort((a, b) => b.date.localeCompare(a.date));
+                            onImportPulls(merged);
+                            alert(`Success! Imported ${uniqueNewPulls.length} new entries into your journal (Total: ${merged.length} entries).`);
+                          } else {
+                            alert('No valid Tarot pulls found in the uploaded file.');
+                          }
+                        } else {
+                          alert('Invalid backup format. File must contain a list of tarot pulls.');
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        alert('Failed to parse backup file. Please ensure it is a valid JSON backup.');
+                      }
+                      // Clear the input value so the same file can be uploaded again
+                      e.target.value = '';
+                    };
+                    fileReader.readAsText(file);
+                  }}
+                  className="hidden"
+                  id="import-backup-file-input"
+                />
+                <label
+                  htmlFor="import-backup-file-input"
+                  className="w-full py-2 px-3 text-xs font-semibold rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 text-zinc-800 shadow-3xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                  id="label-import-backup"
+                >
+                  <Upload className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>Upload & Restore Backup</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

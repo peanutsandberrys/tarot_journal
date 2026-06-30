@@ -10,8 +10,9 @@ type TabOption = 'journal' | 'results' | 'insights';
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabOption>('journal');
   const [pulls, setPulls] = useState<TarotPull[]>([]);
+  const [isStoragePersisted, setIsStoragePersisted] = useState<boolean | null>(null);
 
-  // Load pulls from localStorage on mount
+  // Load pulls and request persistent storage on mount
   useEffect(() => {
     const stored = localStorage.getItem('tarot_pulls_data');
     if (stored) {
@@ -20,6 +21,23 @@ export default function App() {
       } catch (e) {
         console.error('Failed to parse stored tarot pulls data:', e);
       }
+    }
+
+    // Request persistent storage so browser/system does not auto-evict localStorage
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persisted().then((persisted) => {
+        if (!persisted) {
+          navigator.storage.persist().then((granted) => {
+            setIsStoragePersisted(granted);
+            console.log('Persistent storage request status:', granted);
+          });
+        } else {
+          setIsStoragePersisted(true);
+          console.log('Storage is already persistent.');
+        }
+      });
+    } else {
+      setIsStoragePersisted(false);
     }
   }, []);
 
@@ -114,7 +132,11 @@ export default function App() {
           <ResultsPage pulls={pulls} />
         )}
         {activeTab === 'insights' && (
-          <InsightsPage pulls={pulls} />
+          <InsightsPage
+            pulls={pulls}
+            onImportPulls={savePullsToStorage}
+            isStoragePersisted={isStoragePersisted}
+          />
         )}
       </main>
     </div>
