@@ -3,16 +3,18 @@
   "name": "Tarot Journal - Simplistic & Minimal",
   "icons": [
     {
-      "src": "https://share.google/H8jRUQ92PStF94KhO",
-      "sizes": "192x192"
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "https://share.google/H8jRUQ92PStF94KhO",
-      "sizes": "512x512"
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ],
-  "start_url": ".",
-  "background_color": "#fafafa",
+  "start_url": "index.html",
+  "background_color": "#18181b",
   "theme_color": "#18181b",
   "display": "standalone",
   "orientation": "portrait"
