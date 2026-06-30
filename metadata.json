@@ -1,0 +1,6 @@
+{
+  "name": "Tarot Journal",
+  "description": "A simplistic, minimal application to record and analyze tarot card pulls locally and offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

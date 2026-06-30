@@ -1,0 +1,19 @@
+{
+  "short_name": "Tarot Journal",
+  "name": "Tarot Journal - Simplistic & Minimal",
+  "icons": [
+    {
+      "src": "https://share.google/H8jRUQ92PStF94KhO",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://share.google/H8jRUQ92PStF94KhO",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#fafafa",
+  "theme_color": "#18181b",
+  "display": "standalone",
+  "orientation": "portrait"
+}
