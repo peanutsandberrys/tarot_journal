@@ -11,7 +11,12 @@ createRoot(document.getElementById('root')!).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    // Resolve sw.js relative to the manifest's location to handle subdirectories on GitHub Pages perfectly
+    const baseHref = document.querySelector('link[rel="manifest"]')?.getAttribute('href') || 'manifest.json';
+    const manifestUrl = new URL(baseHref, window.location.href);
+    const swUrl = new URL('sw.js', manifestUrl).href;
+
+    navigator.serviceWorker.register(swUrl)
       .then((reg) => {
         console.log('Service Worker registered successfully with scope:', reg.scope);
       })
